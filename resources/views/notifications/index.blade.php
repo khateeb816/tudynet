@@ -38,10 +38,7 @@
                     </small>
                 </div>
                 @if(!$notification->is_read)
-                <form method="POST" action="{{ route('notifications.mark-read', $notification->id) }}" class="ms-2">
-                    @csrf
-                    <button type="submit" class="btn btn-sm btn-outline-primary">Mark as Read</button>
-                </form>
+                <span class="badge bg-primary rounded-pill">New</span>
                 @endif
             </div>
         </div>

@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             SettingsSeeder::class,
             SuperAdminSeeder::class,
             ExampleUsersSeeder::class,
+            ReferralSeeder::class,
         ]);
     }
 }

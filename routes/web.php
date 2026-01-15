@@ -43,14 +43,21 @@ Route::middleware('auth')->group(function () {
     Route::post('/orders/{id}/toggle-full-file-visibility', [OrderController::class, 'toggleFullFileVisibility'])->name('orders.toggle-full-file-visibility');
     Route::post('/orders/{id}/upload-full-payment', [OrderController::class, 'uploadFullPayment'])->name('orders.upload-full-payment');
     Route::post('/orders/{id}/verify-full-payment', [OrderController::class, 'verifyFullPayment'])->name('orders.verify-full-payment');
+    Route::post('/orders/{id}/update-status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
 
     // Referrals
     Route::get('/referrals', [ReferralController::class, 'index'])->name('referrals.index');
     Route::post('/referrals/generate-code', [ReferralController::class, 'generateCode'])->name('referrals.generate-code');
     Route::post('/referrals/request-withdrawal', [ReferralController::class, 'requestWithdrawal'])->name('referrals.request-withdrawal');
+    
+    // Approval Route (Admin/Manager)
+    Route::middleware('role:super_admin,manager')->group(function () {
+        Route::post('/referrals/withdrawals/{id}/approve', [ReferralController::class, 'approveWithdrawal'])->name('referrals.withdrawals.approve');
+    });
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
     Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
 
     // Reviews

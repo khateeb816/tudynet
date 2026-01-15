@@ -46,7 +46,7 @@ class OrderController extends Controller
     {
         $request->validate([
             'expiry_date' => 'required|date|after:today',
-            'words' => 'required|in:250,500,750,1000,1250,1500,1750,2000,2500,3000',
+            'words' => 'required|integer|min:0',
             'description' => 'required|string',
             'subject_id' => 'required|exists:subjects,id',
             'attachments' => 'nullable|array',
@@ -242,6 +242,38 @@ class OrderController extends Controller
         }
 
         return redirect()->back()->with('success', 'Full file uploaded successfully!');
+    }
+
+    public function updateStatus(Request $request, $id) 
+    {
+        $order = Order::findOrFail($id);
+        $user = Auth::user();
+
+        // Writer access to status updates
+        if ($user->isWriter() && $order->assigned_to === $user->id) {
+            $request->validate([
+                'status' => 'required|in:researching,writing,reviewing'
+            ]);
+            
+            // Basic logic: allow switching between these phases freely while working
+            $allowed = ['assigned_to_writer', 'researching', 'writing', 'reviewing', 'half_file_uploaded', 'rejected']; // Rejected maybe later
+            
+            // Prevent going back to basic working if files are already uploaded/approved? 
+            // For now, let's just update if valid
+            
+            $order->update(['status' => $request->status]);
+            
+             OrderStatus::create([
+                'order_id' => $order->id,
+                'status' => $request->status,
+                'created_by' => Auth::id(),
+            ]);
+            
+            return redirect()->back()->with('success', 'Status updated to ' . ucfirst($request->status));
+        }
+        
+        // Manager logic could go here too but keeping strict for now
+        abort(403);
     }
 
     public function markCompleted($id)

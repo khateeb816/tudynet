@@ -11,8 +11,10 @@ class NotificationController extends Controller
 
     public function index(Request $request)
     {
-        $query = Notification::where('to', Auth::id())
-            ->orWhere('to_role', Auth::user()->role)
+        $query = Notification::where(function ($q) {
+                $q->where('to', Auth::id())
+                  ->orWhere('to_role', Auth::user()->role);
+            })
             ->with(['order', 'createdBy'])
             ->latest();
 
@@ -34,6 +36,13 @@ class NotificationController extends Controller
 
         $notifications = $query->paginate(20);
 
+        Notification::where(function ($q) {
+                $q->where('to', Auth::id())
+                  ->orWhere('to_role', Auth::user()->role);
+            })
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
         return view('notifications.index', compact('notifications'));
     }
 
@@ -41,12 +50,24 @@ class NotificationController extends Controller
     {
         $notification = Notification::findOrFail($id);
 
-        if ($notification->to !== Auth::id()) {
+        if ($notification->to !== Auth::id() && $notification->to_role !== Auth::user()->role) {
             abort(403);
         }
 
         $notification->update(['is_read' => true]);
 
         return redirect()->back()->with('success', 'Notification marked as read');
+    }
+
+    public function markAllAsRead()
+    {
+        Notification::where(function ($q) {
+                $q->where('to', Auth::id())
+                  ->orWhere('to_role', Auth::user()->role);
+            })
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
+        return response()->json(['status' => 'success']);
     }
 }

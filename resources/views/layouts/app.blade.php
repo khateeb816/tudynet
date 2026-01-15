@@ -8,108 +8,176 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         :root {
-            --primary-color: #20b2aa;
-            --sidebar-bg: #4a5568;
-            --sidebar-active: #20b2aa;
+            /* Updated Theme Color to Logo Red (#8B0000) */
+            --primary-color: #8B0000;
+            --sidebar-bg: #2c3e50;
+            --sidebar-active: #8B0000;
         }
         body {
-            background-color: #f8f9fa;
+            background-color: #f0f2f5;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
         .sidebar {
-            min-height: 100vh;
             background-color: var(--sidebar-bg);
-            padding: 20px 0;
+            min-height: 100vh;
+            color: #fff;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
         }
         .sidebar .nav-link {
-            color: #fff;
-            padding: 15px 20px;
-            margin: 5px 0;
-            border-radius: 5px;
+            color: rgba(255, 255, 255, 0.8);
+            padding: 0.8rem 1rem;
+            border-radius: 0.25rem;
+            margin-bottom: 0.2rem;
+            transition: all 0.2s;
         }
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
-            background-color: var(--sidebar-active);
+        .sidebar .nav-link:hover {
             color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: var(--primary-color);
+            font-weight: bold;
+        }
+        .sidebar .nav-link i {
+            width: 1.5rem;
+            text-align: center;
+        }
+        /* Mobile Sidebar (Offcanvas) Styles */
+        .offcanvas {
+            background-color: var(--sidebar-bg);
+        }
+        .offcanvas .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 0.8rem 1rem;
+        }
+        .offcanvas .nav-link:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .offcanvas .nav-link.active {
+            color: #fff;
+            background-color: var(--primary-color);
+        }
+        /* Logo Container */
+        .sidebar-logo-container {
+            background-color: transparent;
+            padding: 0;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .sidebar-logo-container img {
+            width: 100%;
+            height: auto;
+            max-height: 100px; /* Increased from 60px to fit better */
+            object-fit: contain; /* or cover, depending on exact logo shape preference */
+            display: block;
         }
         .main-content {
-            padding: 20px;
+            padding: 30px;
         }
         .header {
             background: #fff;
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.02);
         }
         .btn-primary {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
+            padding: 10px 20px;
+            font-weight: 600;
+            border-radius: 8px;
         }
         .btn-primary:hover {
-            background-color: #1a9d96;
-            border-color: #1a9d96;
+            background-color: #600000;
+            border-color: #600000;
         }
         .table-container {
             background: #fff;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
         }
     </style>
     @yield('styles')
 </head>
 <body>
+<body>
     <div class="container-fluid">
         <div class="row">
             @auth
-            <div class="col-md-2 sidebar">
-                <div class="text-center mb-4">
-                    <div class="bg-success d-inline-block p-3 rounded">
-                        <h4 class="text-white mb-0">KCB</h4>
-                    </div>
-                </div>
-                <nav class="nav flex-column">
-                    <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
-                        <i class="bi bi-house-door me-2"></i> Dashboard
-                    </a>
-                    <a class="nav-link {{ request()->routeIs('orders.*') ? 'active' : '' }}" href="{{ route('orders.index') }}">
-                        <i class="bi bi-file-text me-2"></i> Orders
-                    </a>
-                    @if(auth()->user()->isSuperAdmin() || auth()->user()->isManager())
-                    <a class="nav-link {{ request()->routeIs('subjects.*') ? 'active' : '' }}" href="{{ route('subjects.index') }}">
-                        <i class="bi bi-book me-2"></i> Subjects
-                    </a>
-                    <a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">
-                        <i class="bi bi-people me-2"></i> Users
-                    </a>
-                    @endif
-                    @if(auth()->user()->isSuperAdmin())
-                    <a class="nav-link {{ request()->routeIs('settings.*') ? 'active' : '' }}" href="{{ route('settings.index') }}">
-                        <i class="bi bi-gear me-2"></i> Settings
-                    </a>
-                    @endif
-                    <a class="nav-link {{ request()->routeIs('referrals.*') ? 'active' : '' }}" href="{{ route('referrals.index') }}">
-                        <i class="bi bi-share me-2"></i> Referrals
-                    </a>
-                    <a class="nav-link {{ request()->routeIs('notifications.index') ? 'active' : '' }}" href="{{ route('notifications.index') }}">
-                        <i class="bi bi-bell me-2"></i> Notifications
-                    </a>
-                </nav>
+            <!-- Desktop Sidebar -->
+            <div class="col-md-2 sidebar d-none d-md-block">
+                @include('layouts.sidebar')
             </div>
-            <div class="col-md-10 main-content">
+
+            <!-- Mobile Offcanvas Sidebar -->
+            <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel" style="background-color: var(--sidebar-bg); width: 250px;">
+                <div class="offcanvas-header border-bottom border-secondary">
+                    <h5 class="offcanvas-title text-white" id="mobileSidebarLabel">Menu</h5>
+                    <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body p-0">
+                    @include('layouts.sidebar')
+                </div>
+            </div>
+
+            <div class="col-md-10 main-content ms-auto">
                 <div class="header d-flex justify-content-between align-items-center">
-                    <div>
+                    <div class="d-flex align-items-center">
+                        <button class="btn btn-link text-dark me-3 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar">
+                            <i class="bi bi-list fs-3"></i>
+                        </button>
                         <h4 class="mb-0">@yield('page-title', 'Dashboard')</h4>
                     </div>
                     <div class="d-flex align-items-center">
-                        <div class="me-3">
-                            <i class="bi bi-bell fs-5"></i>
+                        <div class="me-3 dropdown">
+                            <a href="#" class="text-decoration-none text-dark position-relative" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" onclick="markNotificationsRead()">
+                                <i class="bi bi-bell fs-5"></i>
+                                @if(isset($unreadNotificationsCount) && $unreadNotificationsCount > 0)
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationBadge">
+                                    {{ $unreadNotificationsCount }}
+                                    <span class="visually-hidden">unread messages</span>
+                                </span>
+                                @endif
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notificationDropdown" style="width: 300px; max-height: 400px; overflow-y: auto;">
+                                <li class="p-2 border-bottom bg-light">
+                                    <h6 class="mb-0">Notifications</h6>
+                                </li>
+                                @if(isset($topNotifications) && count($topNotifications) > 0)
+                                    @foreach($topNotifications as $notification)
+                                    <li>
+                                        <a class="dropdown-item p-3 border-bottom" href="{{ route('notifications.index') }}">
+                                            <p class="mb-1 text-wrap small">{{ $notification->message }}</p>
+                                            <small class="text-muted" style="font-size: 0.75rem;">
+                                                {{ $notification->created_at->diffForHumans() }}
+                                            </small>
+                                        </a>
+                                    </li>
+                                    @endforeach
+                                    <li><a class="dropdown-item text-center p-2 text-primary small fw-bold" href="{{ route('notifications.index') }}">View All Notifications</a></li>
+                                @else
+                                    <li class="p-3 text-center text-muted small">No new notifications</li>
+                                    <li><a class="dropdown-item text-center p-2 text-primary small fw-bold" href="{{ route('notifications.index') }}">View All Notifications</a></li>
+                                @endif
+                            </ul>
                         </div>
                         <div class="dropdown">
-                            <button class="btn btn-link text-dark text-decoration-none dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                {{ auth()->user()->name }} ({{ ucfirst(str_replace('_', ' ', auth()->user()->role)) }})
+                            <button class="btn btn-link text-dark text-decoration-none dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown">
+                                <span class="d-none d-md-inline">{{ auth()->user()->name }} ({{ ucfirst(str_replace('_', ' ', auth()->user()->role)) }})</span>
+                                <span class="d-md-none"><i class="bi bi-person-circle fs-4"></i></span>
                             </button>
-                            <ul class="dropdown-menu">
+                            <ul class="dropdown-menu dropdown-menu-end">
                                 <li><a class="dropdown-item" href="{{ route('profile.show') }}">Profile</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
@@ -122,6 +190,23 @@
                         </div>
                     </div>
                 </div>
+
+                <script>
+                    function markNotificationsRead() {
+                        const badge = document.getElementById('notificationBadge');
+                        if (badge) {
+                            badge.style.display = 'none';
+                        }
+                        
+                        fetch("{{ route('notifications.mark-all-read') }}", {
+                            method: "POST",
+                            headers: {
+                                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                                "Content-Type": "application/json"
+                            }
+                        });
+                    }
+                </script>
             @endauth
 
             @if(session('success'))
