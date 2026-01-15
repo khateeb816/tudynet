@@ -9,9 +9,7 @@
             <div class="card shadow">
                 <div class="card-body p-5">
                     <div class="text-center mb-4">
-                        <div class="bg-success d-inline-block p-3 rounded mb-3">
-                            <h4 class="text-white mb-0">KCB</h4>
-                        </div>
+                        <img src="{{ asset('assets/images/logo.jpeg') }}" alt="Logo" class="img-fluid" style="width: 100px; height: 100px; object-fit: cover;">
                         <h3>Register as Client</h3>
                     </div>
                     <form method="POST" action="{{ route('register') }}">
