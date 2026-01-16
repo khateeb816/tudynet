@@ -157,7 +157,7 @@
                                 @if(isset($topNotifications) && count($topNotifications) > 0)
                                     @foreach($topNotifications as $notification)
                                     <li>
-                                        <a class="dropdown-item p-3 border-bottom" href="{{ route('notifications.index') }}">
+                                        <a class="dropdown-item p-3 border-bottom" href="{{ $notification->order_id ? route('orders.show', $notification->order_id) : route('notifications.index') }}">
                                             <p class="mb-1 text-wrap small">{{ $notification->message }}</p>
                                             <small class="text-muted" style="font-size: 0.75rem;">
                                                 {{ $notification->created_at->diffForHumans() }}

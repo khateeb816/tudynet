@@ -28,12 +28,16 @@
 
     <div class="list-group">
         @forelse($notifications as $notification)
-        <div class="list-group-item {{ !$notification->is_read ? 'bg-light' : '' }}">
+        <a href="{{ $notification->order_id ? route('orders.show', $notification->order_id) : '#' }}" 
+           class="list-group-item list-group-item-action {{ !$notification->is_read ? 'bg-light' : '' }}"
+           style="text-decoration: none; color: inherit;">
             <div class="d-flex justify-content-between align-items-start">
                 <div class="flex-grow-1">
                     <h6 class="mb-1">{{ $notification->message }}</h6>
                     <small class="text-muted">
-                        Order ID: {{ $notification->order_id ?? 'N/A' }} | 
+                        @if($notification->order_id)
+                            Order #{{ $notification->order_id }} | 
+                        @endif
                         {{ $notification->created_at->format('Y-m-d H:i:s') }}
                     </small>
                 </div>
@@ -41,7 +45,7 @@
                 <span class="badge bg-primary rounded-pill">New</span>
                 @endif
             </div>
-        </div>
+        </a>
         @empty
         <div class="alert alert-info">No notifications found</div>
         @endforelse

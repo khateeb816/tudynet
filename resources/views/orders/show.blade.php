@@ -323,6 +323,91 @@
                  </div>
             </div>
 
+            <!-- PAYMENT SCREENSHOTS (For Managers and Clients) -->
+            @if((auth()->user()->isManager() || auth()->user()->isSuperAdmin() || auth()->user()->isClient()) && ($order->half_payment_image || $order->full_payment_image))
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white fw-bold py-3">Payment Screenshots</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        @if($order->half_payment_image)
+                        <div class="col-md-6">
+                            <div class="card h-100 border-light shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">Half Payment Screenshot</h6>
+                                    <small class="text-muted">
+                                        Uploaded: {{ $order->statusHistory->where('status', 'half_payment_uploaded')->first()?->created_at->format('M d, Y h:i A') ?? 'N/A' }}
+                                    </small>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="bg-light d-flex justify-content-center align-items-center" style="min-height: 300px; max-height: 400px; overflow: hidden;">
+                                        <img src="{{ Storage::url($order->half_payment_image) }}" 
+                                             class="img-fluid" 
+                                             style="object-fit: contain; max-height: 400px; width: 100%;" 
+                                             alt="Half Payment Screenshot"
+                                             onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22%3EImage not found%3C/text%3E%3C/svg%3E';">
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-white text-center">
+                                    <a href="{{ Storage::url($order->half_payment_image) }}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       download 
+                                       target="_blank">
+                                        <i class="bi bi-download me-1"></i> Download
+                                    </a>
+                                    <a href="{{ Storage::url($order->half_payment_image) }}" 
+                                       class="btn btn-sm btn-outline-secondary" 
+                                       target="_blank">
+                                        <i class="bi bi-eye me-1"></i> View Full Size
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        @if($order->full_payment_image)
+                        <div class="col-md-6">
+                            <div class="card h-100 border-light shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">Full Payment Screenshot</h6>
+                                    <small class="text-muted">
+                                        Uploaded: {{ $order->statusHistory->where('status', 'full_payment_uploaded')->first()?->created_at->format('M d, Y h:i A') ?? 'N/A' }}
+                                    </small>
+                                    @if($order->status === 'full_payment_verified')
+                                        <span class="badge bg-success ms-2">Verified</span>
+                                    @else
+                                        <span class="badge bg-warning text-dark ms-2">Pending Verification</span>
+                                    @endif
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="bg-light d-flex justify-content-center align-items-center" style="min-height: 300px; max-height: 400px; overflow: hidden;">
+                                        <img src="{{ Storage::url($order->full_payment_image) }}" 
+                                             class="img-fluid" 
+                                             style="object-fit: contain; max-height: 400px; width: 100%;" 
+                                             alt="Full Payment Screenshot"
+                                             onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22%3EImage not found%3C/text%3E%3C/svg%3E';">
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-white text-center">
+                                    <a href="{{ Storage::url($order->full_payment_image) }}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       download 
+                                       target="_blank">
+                                        <i class="bi bi-download me-1"></i> Download
+                                    </a>
+                                    <a href="{{ Storage::url($order->full_payment_image) }}" 
+                                       class="btn btn-sm btn-outline-secondary" 
+                                       target="_blank">
+                                        <i class="bi bi-eye me-1"></i> View Full Size
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <!-- ACTION WORKSPACES (Dynamic by Role) -->
             
             <!-- 1. WRITER WORKSPACE -->
@@ -333,23 +418,50 @@
                     <div class="row">
                         <div class="col-md-6 mb-4 mb-md-0">
                              <h6 class="text-uppercase text-muted small fw-bold mb-3">Update Progress</h6>
-                             <form method="POST" action="{{ route('orders.update-status', $order->id) }}">
-                                @csrf
-                                <div class="input-group">
-                                    <select class="form-select border-primary" name="status">
-                                        <option value="" disabled selected>Change Status...</option>
-                                        <option value="researching" {{ $order->status === 'researching' ? 'selected' : '' }}>Researching</option>
-                                        <option value="writing" {{ $order->status === 'writing' ? 'selected' : '' }}>Writing</option>
-                                        <option value="reviewing" {{ $order->status === 'reviewing' ? 'selected' : '' }}>Reviewing</option>
-                                    </select>
-                                    <button class="btn btn-primary" type="submit">Update</button>
-                                </div>
-                            </form>
+                             @php
+                                $showStatusButtons = !in_array($order->status, ['half_file_uploaded', 'full_file_uploaded', 'completed', 'cancelled']);
+                             @endphp
+                             
+                             @if($showStatusButtons)
+                                 @if($order->status === 'assigned_to_writer')
+                                     <form method="POST" action="{{ route('orders.update-status', $order->id) }}" class="d-inline">
+                                         @csrf
+                                         <input type="hidden" name="status" value="researching">
+                                         <button class="btn btn-primary w-100" type="submit">
+                                             <i class="bi bi-search me-2"></i>Start Researching
+                                         </button>
+                                     </form>
+                                 @elseif($order->status === 'researching')
+                                     <form method="POST" action="{{ route('orders.update-status', $order->id) }}" class="d-inline">
+                                         @csrf
+                                         <input type="hidden" name="status" value="writing">
+                                         <button class="btn btn-primary w-100" type="submit">
+                                             <i class="bi bi-pencil me-2"></i>Start Writing
+                                         </button>
+                                     </form>
+                                 @elseif($order->status === 'writing')
+                                     <form method="POST" action="{{ route('orders.update-status', $order->id) }}" class="d-inline">
+                                         @csrf
+                                         <input type="hidden" name="status" value="reviewing">
+                                         <button class="btn btn-primary w-100" type="submit">
+                                             <i class="bi bi-eye me-2"></i>Start Reviewing
+                                         </button>
+                                     </form>
+                                 @elseif($order->status === 'reviewing')
+                                     <div class="alert alert-success mb-0">
+                                         <i class="bi bi-check-circle me-2"></i>Ready to upload files
+                                     </div>
+                                 @endif
+                             @else
+                                 <div class="alert alert-info mb-0">
+                                     <i class="bi bi-info-circle me-2"></i>Files uploaded - Status locked
+                                 </div>
+                             @endif
                         </div>
                         <div class="col-md-6">
                             <h6 class="text-uppercase text-muted small fw-bold mb-3">Upload Deliverables</h6>
                              <!-- Half File Upload -->
-                            @if(in_array($order->status, ['assigned_to_writer', 'researching', 'writing', 'reviewing', 'half_file_uploaded']))
+                            @if(!in_array($order->status, ['completed', 'cancelled']))
                             <form action="{{ route('orders.upload-half-file', $order->id) }}" method="POST" enctype="multipart/form-data" class="mb-3">
                                 @csrf
                                 <label class="form-label small">Half File (Doc/PDF)</label>
@@ -364,7 +476,7 @@
                             @endif
 
                             <!-- Full File Upload -->
-                            @if(in_array($order->status, ['half_payment_verified', 'full_file_uploaded', 'completed']))
+                            @if(!in_array($order->status, ['completed', 'cancelled']))
                             <form action="{{ route('orders.upload-full-file', $order->id) }}" method="POST" enctype="multipart/form-data">
                                 @csrf
                                 <label class="form-label small">Full File (Final Version)</label>
@@ -406,7 +518,7 @@
                             @endif
 
                             <!-- Full Payment -->
-                            @if($order->half_file_visible && !$order->full_payment_verified)
+                            @if($order->half_file_visible && !$order->full_payment_image)
                             <form action="{{ route('orders.upload-full-payment', $order->id) }}" method="POST" enctype="multipart/form-data">
                                 @csrf
                                 <label class="form-label small">Upload Full Payment Screenshot</label>
@@ -415,6 +527,10 @@
                                     <button class="btn btn-success text-white btn-sm" type="submit">Upload Final Payment</button>
                                 </div>
                             </form>
+                            @elseif($order->full_payment_image && $order->status !== 'full_payment_verified')
+                                <div class="alert alert-info py-2 small mb-3"><i class="bi bi-clock"></i> Full Payment Pending Verification</div>
+                            @elseif($order->status === 'full_payment_verified')
+                                <div class="alert alert-success py-2 small mb-3"><i class="bi bi-check-circle"></i> Full Payment Verified</div>
                             @endif
                         </div>
                         <div class="col-md-6">
@@ -462,7 +578,7 @@
                             </form>
                         @endif
 
-                        @if($order->full_payment_uploaded && !$order->full_payment_verified)
+                        @if($order->full_payment_image && $order->status !== 'full_payment_verified')
                             <form action="{{ route('orders.verify-full-payment', $order->id) }}" method="POST">
                                 @csrf
                                 <button type="submit" class="btn btn-success btn-sm">Verify Full Payment</button>

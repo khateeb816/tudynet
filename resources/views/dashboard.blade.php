@@ -66,6 +66,31 @@
     @endif
 </div>
 
+@if(auth()->user()->isSuperAdmin() || auth()->user()->isManager())
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-muted mb-3">Orders Over Time</h5>
+                <div style="height: 300px;">
+                    <canvas id="monthlyOrdersChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-muted mb-3">Order Statuses</h5>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="orderStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 <div class="table-container">
     <h5 class="mb-3">Recent Orders</h5>
     <div class="table-responsive">
@@ -107,5 +132,91 @@
         </table>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+@if(auth()->user()->isSuperAdmin() || auth()->user()->isManager())
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const months = @json($graphMonths ?? []);
+        const monthlyCounts = @json($graphMonthlyCounts ?? []);
+        const statusLabels = @json($graphStatusLabels ?? []);
+        const statusCounts = @json($graphStatusCounts ?? []);
+
+        // Monthly Orders Chart (Line)
+        const ctxMonthly = document.getElementById('monthlyOrdersChart').getContext('2d');
+        new Chart(ctxMonthly, {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: 'Orders',
+                    data: monthlyCounts,
+                    borderColor: '#8B0000',
+                    backgroundColor: 'rgba(139, 0, 0, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#8B0000',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
+            }
+        });
+
+        // Status Distribution Chart (Doughnut)
+        const ctxStatus = document.getElementById('orderStatusChart').getContext('2d');
+        new Chart(ctxStatus, {
+            type: 'doughnut',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusCounts,
+                    backgroundColor: [
+                        '#ffc107', // Pending (Warning)
+                        '#0dcaf0', // Assigned/Info
+                        '#198754', // Completed (Success)
+                        '#8B0000', // Revision/Primary
+                        '#6c757d'  // Other
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+    });
+</script>
+@endif
 @endsection
 
