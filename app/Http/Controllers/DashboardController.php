@@ -9,6 +9,12 @@ use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
+
+    public function home()
+    {
+        return view('home.index');
+    }
+    
     public function index()
     {
         $user = Auth::user();

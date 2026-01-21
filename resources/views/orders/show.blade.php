@@ -638,7 +638,7 @@
                                         <span class="badge bg-danger ms-2" style="font-size: 0.7rem;">Manager</span>
                                     @endif
                                 </div>
-                                <p class="mb-0 text-dark">{{ $review->comment }}</p>
+                                <p class="mb-0 {{ str_contains($review->comment, 'request a meeting') ? 'text-danger fw-bold' : 'text-dark' }}">{{ $review->comment }}</p>
                             </div>
                         </div>
                         @empty

@@ -182,6 +182,7 @@ class OrderController extends Controller
 
         $writer = \App\Models\User::find($request->writer_id);
         $this->notifyUser($writer, $order, 'You have been assigned to order #' . $order->id);
+        $this->notifyUser($order->creator, $order, 'A writer has been assigned to your order #' . $order->id);
 
         return redirect()->back()->with('success', 'Writer assigned successfully!');
     }
@@ -210,6 +211,8 @@ class OrderController extends Controller
                 'status' => 'half_file_uploaded',
                 'created_by' => Auth::id(),
             ]);
+
+            $this->notifyUser($order->creator, $order, 'First draft (half file) has been uploaded for order #' . $order->id . '. It is pending review.');
         }
 
         return redirect()->back()->with('success', 'Half file uploaded successfully!');
@@ -239,6 +242,8 @@ class OrderController extends Controller
                 'status' => 'full_file_uploaded',
                 'created_by' => Auth::id(),
             ]);
+
+            $this->notifyUser($order->creator, $order, 'Final draft (full file) has been uploaded for order #' . $order->id . '. It is pending review.');
         }
 
         return redirect()->back()->with('success', 'Full file uploaded successfully!');
@@ -268,6 +273,8 @@ class OrderController extends Controller
                 'status' => $request->status,
                 'created_by' => Auth::id(),
             ]);
+
+            $this->notifyUser($order->creator, $order, 'Order #' . $order->id . ' status updated to ' . ucfirst($request->status) . '.');
             
             return redirect()->back()->with('success', 'Status updated to ' . ucfirst($request->status));
         }
@@ -293,6 +300,7 @@ class OrderController extends Controller
         ]);
 
         $this->notifyManagers($order, 'Order #' . $order->id . ' has been completed.');
+        $this->notifyUser($order->creator, $order, 'Order #' . $order->id . ' has been marked as completed by the writer. It is pending final review.');
 
         return redirect()->back()->with('success', 'Order marked as completed!');
     }
