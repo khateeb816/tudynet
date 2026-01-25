@@ -1,0 +1,247 @@
+📘 System Documentation
+Order & Referral Management System
+
+👥 User Roles & Access
+There are 4 types of users, all using the same login form.
+1. Super Admin (SA)
+* Can log in
+* Creates:
+    * Managers
+    * Writers / Employees
+* Full access to:
+    * Orders
+    * Referrals
+    * Settings
+    * Subjects
+    * Users
+* Can disable:
+    * Managers
+    * Writers
+    * Clients
+* Approves referral withdrawals
+
+2. Manager
+* Created by Super Admin
+* Can:
+    * Approve orders
+    * Assign writers
+    * Verify payments
+    * Control order visibility
+* Can disable:
+    * Clients
+    * Writers
+* Receives all order-related notifications and emails
+
+3. Writer / Employee
+* Created by Super Admin or Manager
+* Disabled by default until activated
+* Can:
+    * View assigned orders
+    * Upload half & full files
+    * Update order status
+    * View revisions and feedback
+* Cannot:
+    * Approve payments
+    * Assign orders
+
+4. Client
+* Registers from Frontend
+* Can be disabled by Manager or SA
+* Can:
+    * Create orders
+    * Upload payments
+    * View files (based on permissions)
+    * Submit feedback & revisions
+    * Request meetings
+
+🧩 Core Modules
+There are two main components:
+1. Order Management
+2. Referral System
+
+📦 Order Module
+Order Entity (Created by Client)
+Fields:
+* expiry_date
+* words
+    * Allowed values: 250, 500, 750, 1000...
+* description
+* subject
+    * Managed via CRUD by SA & Manager
+* total_amount
+    * Auto-calculated based on word count
+* attachments
+    * PDF, Word, Image, Video
+* half_payment_image
+* full_payment_image
+* status
+* created_at
+* created_by
+
+Order Status History
+Each order status change is logged.
+order_statuses
+
+order_id
+status
+created_at
+created_by
+This ensures:
+* Full audit trail
+* Clear role responsibility
+
+🔔 Notifications & Emails
+Notifications
+Triggered on:
+* Half payment submission
+* Order approval
+* Writer assignment
+* Order completion
+* Payment verification
+* Referral withdrawal request
+* Meeting request
+notification table
+
+order_id
+message
+by (user_id)
+to (user_id / role)
+created_at
+
+Emails
+* Sent automatically when order status changes
+* Sent to relevant roles:
+    * Client
+    * Writer
+    * Manager
+    * Super Admin
+
+💬 Reviews, Feedback & Revisions
+Works like a comment thread inside each order.
+Fields:
+
+order_id
+comment
+created_by
+created_at
+Visible to:
+* Client
+* Writer
+* Manager
+* Super Admin
+
+🔄 Order Flow (Step-by-Step)
+1. Client creates an order
+2. Client uploads half payment
+    * Notification & email sent to:
+        * Manager
+        * Super Admin
+3. Manager approves the order
+4. Manager assigns the order to a writer
+    * Status: Assigned to Writer
+5. Writer views order details
+6. Writer uploads:
+    * Half file
+    * Full file
+    * PDF security applied:
+        * Some pages blurred
+        * Limited visible pages
+7. Writer marks order as completed
+    * Email sent to Manager
+8. Manager allows client to view half file
+9. Client uploads full payment image
+10. Manager verifies payment
+    * Status changed to Full Payment Done
+11. Client gets access to complete files
+12. Client submits revisions & feedback
+    * Visible to all management
+13. Meeting Request
+    * Client clicks “Request Meeting”
+    * Red notification + email sent to:
+        * Manager
+        * Super Admin
+    * Client receives confirmation email: “We will respond within 24 hours” 
+
+🎯 Referral Module
+Referral Code Creation
+* Any user can generate a unique referral code
+* A referral URL is shared
+
+Referral Signup
+* When a new user registers using a referral code:
+    * referred_by (referrer user ID) is saved in the users table
+
+Referral Reward Logic
+* When the referred user pays for any order:
+    * A fixed referral reward is credited
+    * Reward amount is fetched from settings table
+* Referrer dashboard shows:
+    * Total earned
+    * Paid amount
+    * Pending amount
+    * Order details
+
+Referral Withdrawal
+1. User clicks Referral Withdrawal
+2. System sends:
+    * Notification + email to Super Admin
+    * Confirmation email to user: “We will respond within 24 hours” 
+3. Super Admin processes the request
+4. Referral status is marked as Paid
+5. Future orders continue generating referral rewards
+
+🗄️ Referral Database Structure
+users
+
+id
+name
+email
+password
+referral_code
+referred_by (nullable, FK -> users.id)
+status
+created_at
+
+referrals
+
+id
+referrer_id
+referred_user_id
+order_id
+reward_amount
+status (pending | approved | paid)
+created_at
+
+referral_withdrawals
+
+id
+user_id
+amount
+status (requested | approved | rejected | paid)
+requested_at
+processed_at
+
+⚙️ Settings-Based Configuration
+All dynamic values are controlled via settings table.
+settings
+
+id
+key
+value
+type
+description
+Examples:
+* referral_reward_amount
+* referral_min_order_amount
+* order_statuses
+* pdf_preview_pages
+* pdf_blur_enabled
+* response_time_hours
+
+🔐 PDF Security Rules
+* Half file:
+    * Limited visible pages
+    * Blurred remaining pages
+    * Watermark applied
+* Full file:
+    * Visible only after full payment approval

@@ -33,6 +33,7 @@ return new class extends Migration
                 'reviewing',
                 'half_file_uploaded',
                 'full_file_uploaded',
+                'full_file_visible',
                 'completed',
                 'half_file_visible',
                 'full_payment_uploaded',

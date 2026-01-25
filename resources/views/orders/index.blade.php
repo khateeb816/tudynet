@@ -50,7 +50,7 @@
                     <td>{{ $order->words }}</td>
                     <td>${{ number_format($order->total_amount, 2) }}</td>
                     <td>
-                        <span class="badge bg-{{ $order->status === 'completed' ? 'success' : ($order->status === 'pending' ? 'warning' : 'info') }}">
+                        <span class="badge rounded-pill bg-{{ $order->status === 'cancelled' ? 'danger' : ($order->status === 'completed' ? 'success' : ($order->status === 'pending' ? 'warning' : 'info')) }} px-3 py-2 text-uppercase">
                             {{ ucfirst(str_replace('_', ' ', $order->status)) }}
                         </span>
                     </td>

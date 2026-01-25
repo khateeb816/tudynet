@@ -44,6 +44,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/orders/{id}/upload-full-payment', [OrderController::class, 'uploadFullPayment'])->name('orders.upload-full-payment');
     Route::post('/orders/{id}/verify-full-payment', [OrderController::class, 'verifyFullPayment'])->name('orders.verify-full-payment');
     Route::post('/orders/{id}/update-status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
+    Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+
 
     // Referrals
     Route::get('/referrals', [ReferralController::class, 'index'])->name('referrals.index');

@@ -9,11 +9,11 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 class="fw-bold text-dark mb-1">Order #{{ $order->id }}</h2>
-                    <span class="badge rounded-pill bg-{{ $order->status === 'cancelled' ? 'danger' : ($order->status === 'completed' ? 'success' : 'primary') }} px-3 py-2 text-uppercase" style="background-color: var(--primary-color) !important;">
+                    <span class="badge rounded-pill bg-{{ $order->status === 'cancelled' ? 'danger' : ($order->status === 'completed' ? 'success' : ($order->status === 'pending' ? 'warning' : 'info')) }} px-3 py-2 text-uppercase">
                         {{ ucfirst(str_replace('_', ' ', $order->status)) }}
                     </span>
                 </div>
-                 @if(auth()->user()->isClient())
+                @if(auth()->user()->isClient())
                 <div>
                     <form action="{{ route('reviews.store') }}" method="POST" onsubmit="return confirm('Are you sure you want to request a meeting?');">
                         @csrf
@@ -21,6 +21,16 @@
                         <input type="hidden" name="comment" value="I would like to request a meeting regarding this order.">
                         <button type="submit" class="btn btn-outline-danger">
                             <i class="bi bi-camera-video me-2"></i> Request Meeting
+                        </button>
+                    </form>
+                </div>
+                @endif
+                @if(auth()->user()->isManager() || auth()->user()->isSuperAdmin())
+                <div>
+                    <form action="{{ route('orders.cancel', $order->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this order?');">
+                        @csrf
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-2"></i> Cancel Order
                         </button>
                     </form>
                 </div>
@@ -34,7 +44,7 @@
                 </div>
                 <div class="card-body px-4 pb-4">
                     <div class="p-3 rounded-3" style="background-color: #f8f9fa;">
-                         @php
+                        @php
                             $allStatuses = [
                                 'pending' => 'Pending',
                                 'half_payment_uploaded' => 'Half Payment Uploaded',
@@ -48,11 +58,32 @@
                                 'full_payment_uploaded' => 'Full Payment Uploaded',
                                 'full_payment_verified' => 'Full Payment Verified',
                                 'full_file_uploaded' => 'Full File Uploaded',
+                                'full_file_visible' => 'Full File Visible',
                                 'completed' => 'Completed',
                             ];
 
-                            $statusKeys = array_keys($allStatuses);
                             $currentStatusKey = $order->status === 'drafting' ? 'writing' : $order->status;
+
+                            if(auth()->user()->isWriter()) {
+                                $paymentStatuses = ['half_payment_uploaded', 'full_payment_uploaded', 'full_payment_verified'];
+                                
+                                // If current status is a payment status, find the nearest previous visible status for the writer
+                                if (in_array($currentStatusKey, $paymentStatuses)) {
+                                    $fullStatusKeys = array_keys($allStatuses);
+                                    $currentIdxInFull = array_search($currentStatusKey, $fullStatusKeys);
+                                    for ($i = $currentIdxInFull - 1; $i >= 0; $i--) {
+                                        if (!in_array($fullStatusKeys[$i], $paymentStatuses)) {
+                                            $currentStatusKey = $fullStatusKeys[$i];
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                // Remove payment statuses from the display list
+                                $allStatuses = array_diff_key($allStatuses, array_flip($paymentStatuses));
+                            }
+
+                            $statusKeys = array_keys($allStatuses);
                             $currentIndex = array_search($currentStatusKey, $statusKeys);
                             $isCancelled = $order->status === 'cancelled';
                         @endphp
@@ -65,7 +96,7 @@
 
                         @php
                             // Chunk statuses into rows of 4
-                            $chunks = array_chunk($allStatuses, 4, true); 
+                            $chunks = array_chunk($allStatuses, 4, true);
                             $totalChunks = count($chunks);
                         @endphp
 
@@ -76,80 +107,81 @@
                                         $isEvenRow = $chunkIndex % 2 === 0; // 0, 2 (L->R)
                                         $rowClass = $isEvenRow ? 'flex-row' : 'flex-row-reverse';
                                     @endphp
-    
+
                                     <div class="d-flex {{ $rowClass }} justify-content-between position-relative">
                                         @foreach($chunk as $key => $label)
                                             @php
                                                 // Find original index
                                                 $index = array_search($key, array_keys($allStatuses));
-                                                
+
                                                 $isPastOrCurrent = ($currentIndex !== false && $index <= $currentIndex);
                                                 $isCompleted = $isPastOrCurrent && !$isCancelled;
                                                 $isLastInChunk = $loop->last;
                                                 $isFirstInChunk = $loop->first;
-                                                
+
                                                 // Line Colors (Green if Next Step Reached)
                                                 $isLineGreen = ($index < $currentIndex) ? 'bg-success' : 'bg-secondary';
                                                 $lineOpacity = $isLineGreen === 'bg-success' ? '1' : '0.3';
-                                                
+
                                                 // Vertical Line Color (For turns)
-                                                $vertLineColor = $isLineGreen; 
+                                                $vertLineColor = $isLineGreen;
                                                 $vertOpacity = $lineOpacity;
                                             @endphp
-    
-                                            <div class="position-relative" style="width: 25%; min-width: 150px;">
-                                                
+
+                                            <div class="position-relative" style="width: 25%;">
+
                                                 <!-- 1. Standard Horizontal Connector -->
                                                 @if(!$isLastInChunk)
-                                                    <div class="position-absolute {{ $isLineGreen }}" 
+                                                    <div class="position-absolute {{ $isLineGreen }}"
                                                          style="height: 3px; top: 15px; width: 100%; z-index: 1; opacity: {{ $lineOpacity }};
                                                                 {{ $isEvenRow ? 'left: 50%;' : 'right: 50%;' }}"></div>
                                                 @endif
-    
+
                                                 <!-- 2. Side Connectors (Turning Corners) -->
                                                 <!-- CASE A: End of L->R Row (Right Turn) -->
                                                 @if($isEvenRow && $isLastInChunk && $chunkIndex < $totalChunks - 1)
                                                     <div class="position-absolute {{ $vertLineColor }}" style="height: 3px; top: 15px; left: 50%; width: 50%; z-index: 1; opacity: {{ $vertOpacity }};"></div>
                                                     <div class="position-absolute {{ $vertLineColor }}" style="width: 3px; height: calc(100% + 3rem); top: 15px; right: 0; z-index: 1; opacity: {{ $vertOpacity }};"></div>
                                                 @endif
-    
+
                                                 <!-- CASE B: Start of R->L Row (Continuing Right Turn) -->
                                                 @if(!$isEvenRow && $isFirstInChunk)
                                                     <div class="position-absolute {{ $isLineGreen }}" style="height: 3px; top: 15px; left: 50%; width: 50%; z-index: 1; opacity: {{ $lineOpacity }};"></div>
-                                                     @php 
+                                                     @php
                                                         $isEntryGreen = (($index - 1) < $currentIndex) ? 'bg-success' : 'bg-secondary';
                                                         $entryOpacity = $isEntryGreen === 'bg-success' ? '1' : '0.3';
                                                      @endphp
-                                                     <div class="position-absolute {{ $isEntryGreen }}" style="height: 3px; top: 15px; left: 50%; width: 50%; z-index: 1; opacity: {{ $entryOpacity }};"></div> 
+                                                     <div class="position-absolute {{ $isEntryGreen }}" style="height: 3px; top: 15px; left: 50%; width: 50%; z-index: 1; opacity: {{ $entryOpacity }};"></div>
                                                 @endif
-    
+
                                                 <!-- CASE C: End of R->L Row (Left Turn) -->
                                                 @if(!$isEvenRow && $isLastInChunk && $chunkIndex < $totalChunks - 1)
                                                     <div class="position-absolute {{ $vertLineColor }}" style="height: 3px; top: 15px; right: 50%; width: 50%; z-index: 1; opacity: {{ $vertOpacity }};"></div>
                                                     <div class="position-absolute {{ $vertLineColor }}" style="width: 3px; height: calc(100% + 3rem); top: 15px; left: 0; z-index: 1; opacity: {{ $vertOpacity }};"></div>
                                                 @endif
-    
+
                                                 <!-- CASE D: Start of L->R Row (Continuing Left Turn) -->
                                                 @if($isEvenRow && $isFirstInChunk && $chunkIndex > 0)
-                                                    @php 
-                                                        $isEntryGreen = (($index - 1) < $currentIndex) ? 'bg-success' : 'bg-secondary';
+                                                    @php
+                                                        $prevRowLastIndex = (($chunkIndex * 4) - 1);
+                                                        $isEntryGreen = ($prevRowLastIndex < $currentIndex) ? 'bg-success' : 'bg-secondary';
                                                         $entryOpacity = $isEntryGreen === 'bg-success' ? '1' : '0.3';
                                                      @endphp
                                                     <div class="position-absolute {{ $isEntryGreen }}" style="height: 3px; top: 15px; right: 50%; width: 50%; z-index: 1; opacity: {{ $entryOpacity }};"></div>
                                                 @endif
-    
+
                                                 <!-- Content -->
                                                 <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;">
                                                      <!-- Status Circle -->
-                                                    <div class="flex-shrink-0 d-flex justify-content-center align-items-center rounded-circle border {{ $isCompleted ? 'border-success bg-success text-white' : 'border-secondary bg-light text-muted' }}" 
+                                                    <div class="flex-shrink-0 d-flex justify-content-center align-items-center rounded-circle border {{ $isCompleted ? 'border-success bg-success text-white' : 'border-secondary bg-light text-muted' }}"
                                                          style="width: 30px; height: 30px; transition: all 0.3s ease;">
-                                                        @if($isCompleted) 
-                                                            <i class="bi bi-check" style="font-size: 1.2rem;"></i> 
+                                                        @if($isCompleted)
+                                                            <i class="bi bi-check" style="font-size: 1.2rem;"></i>
                                                         @else
                                                             <i class="bi bi-lock-fill" style="font-size: 0.8rem; opacity: 0.5;"></i>
                                                         @endif
                                                     </div>
-                                                    
+
                                                     <!-- Text -->
                                                     <div class="text-center mt-2 w-100 px-1">
                                                         <div class="fw-bold {{ $isCompleted ? 'text-success' : 'text-muted' }}" style="font-size: 0.85rem; line-height: 1.2;">{{ $label }}</div>
@@ -180,7 +212,7 @@
                                         $isPastOrCurrent = ($currentIndex !== false && $index <= $currentIndex);
                                         $isCompleted = $isPastOrCurrent && !$isCancelled;
                                         $isLast = $loop->last;
-                                        
+
                                         // Line Color logic: If prev item completed, line to this is green?
                                         // Or if THIS item is completed, line from prev is green.
                                         // Timeline: Line connects dots.
@@ -190,7 +222,7 @@
 
                                     <div class="position-relative mb-4">
                                         <!-- Dot -->
-                                        <div class="position-absolute top-0 start-0 translate-middle rounded-circle border {{ $isCompleted ? 'border-success bg-success text-white' : 'border-secondary bg-light text-muted' }}" 
+                                        <div class="position-absolute top-0 start-0 translate-middle rounded-circle border {{ $isCompleted ? 'border-success bg-success text-white' : 'border-secondary bg-light text-muted' }}"
                                              style="width: 24px; height: 24px; left: -1px !important; z-index: 2; margin-top: 4px;">
                                             @if($isCompleted)
                                                 <i class="bi bi-check d-flex justify-content-center align-items-center h-100" style="font-size: 1rem;"></i>
@@ -206,7 +238,7 @@
                                                 @php $historyRec = $order->statusHistory->where('status', $key)->first(); @endphp
                                                 @if($historyRec)
                                                     <small class="text-muted d-block" style="font-size: 0.75rem;">
-                                                        {{ $historyRec->created_at->format('M d, h:i A') }} &bull; 
+                                                        {{ $historyRec->created_at->format('M d, h:i A') }} &bull;
                                                         {{ $historyRec->createdBy->isManager() ? 'Manager' : ($historyRec->createdBy->isWriter() ? 'Writer' : 'Client') }}
                                                     </small>
                                                 @endif
@@ -236,12 +268,14 @@
                                 <span class="fw-bold text-dark">{{ $order->words }} words</span>
                             </div>
                         </div>
+                        @if(!auth()->user()->isWriter())
                         <div class="col-md-3 col-6">
                             <div class="p-3 rounded-3 bg-light h-100">
                                 <small class="text-uppercase text-muted fw-bold d-block mb-1">Amount</small>
                                 <span class="fw-bold text-success">${{ number_format($order->total_amount, 2) }}</span>
                             </div>
                         </div>
+                        @endif
                         <div class="col-md-3 col-6">
                             <div class="p-3 rounded-3 bg-light h-100">
                                 <small class="text-uppercase text-muted fw-bold d-block mb-1">Deadline</small>
@@ -259,7 +293,7 @@
                     <p class="text-secondary mb-0" style="white-space: pre-line;">{{ $order->description }}</p>
                 </div>
             </div>
-            
+
             <!-- ATTACHMENTS (With Media Previews for Client) -->
             <div class="card border-0 shadow-sm mb-4">
                  <div class="card-header bg-white fw-bold py-3">Attachments</div>
@@ -275,7 +309,7 @@
                                     $downloadUrl = route('orders.attachments.download', ['orderId' => $order->id, 'attachmentIndex' => $index]);
                                     // Use download URL for source as well, browser handles it
                                 @endphp
-                                
+
                                 <div class="col-md-4 col-sm-6">
                                     <div class="card h-100 border-light shadow-sm">
                                         @if($isImage)
@@ -306,7 +340,7 @@
                                                 <span class="text-uppercase fw-bold small">{{ $extension }}</span>
                                             </div>
                                         @endif
-                                        
+
                                         <div class="card-body p-2 text-center bg-white border-top">
                                              <div class="fw-bold text-dark text-truncate mb-1" title="Attachment {{ $index+1 }}">Attachment {{ $index + 1 }}</div>
                                              <a href="{{ $downloadUrl }}" class="btn btn-sm btn-outline-primary w-100">
@@ -340,22 +374,22 @@
                                 </div>
                                 <div class="card-body p-0">
                                     <div class="bg-light d-flex justify-content-center align-items-center" style="min-height: 300px; max-height: 400px; overflow: hidden;">
-                                        <img src="{{ Storage::url($order->half_payment_image) }}" 
-                                             class="img-fluid" 
-                                             style="object-fit: contain; max-height: 400px; width: 100%;" 
+                                        <img src="{{ Storage::url($order->half_payment_image) }}"
+                                             class="img-fluid"
+                                             style="object-fit: contain; max-height: 400px; width: 100%;"
                                              alt="Half Payment Screenshot"
                                              onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22%3EImage not found%3C/text%3E%3C/svg%3E';">
                                     </div>
                                 </div>
                                 <div class="card-footer bg-white text-center">
-                                    <a href="{{ Storage::url($order->half_payment_image) }}" 
-                                       class="btn btn-sm btn-outline-primary" 
-                                       download 
+                                    <a href="{{ Storage::url($order->half_payment_image) }}"
+                                       class="btn btn-sm btn-outline-primary"
+                                       download
                                        target="_blank">
                                         <i class="bi bi-download me-1"></i> Download
                                     </a>
-                                    <a href="{{ Storage::url($order->half_payment_image) }}" 
-                                       class="btn btn-sm btn-outline-secondary" 
+                                    <a href="{{ Storage::url($order->half_payment_image) }}"
+                                       class="btn btn-sm btn-outline-secondary"
                                        target="_blank">
                                         <i class="bi bi-eye me-1"></i> View Full Size
                                     </a>
@@ -380,22 +414,22 @@
                                 </div>
                                 <div class="card-body p-0">
                                     <div class="bg-light d-flex justify-content-center align-items-center" style="min-height: 300px; max-height: 400px; overflow: hidden;">
-                                        <img src="{{ Storage::url($order->full_payment_image) }}" 
-                                             class="img-fluid" 
-                                             style="object-fit: contain; max-height: 400px; width: 100%;" 
+                                        <img src="{{ Storage::url($order->full_payment_image) }}"
+                                             class="img-fluid"
+                                             style="object-fit: contain; max-height: 400px; width: 100%;"
                                              alt="Full Payment Screenshot"
                                              onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22%3EImage not found%3C/text%3E%3C/svg%3E';">
                                     </div>
                                 </div>
                                 <div class="card-footer bg-white text-center">
-                                    <a href="{{ Storage::url($order->full_payment_image) }}" 
-                                       class="btn btn-sm btn-outline-primary" 
-                                       download 
+                                    <a href="{{ Storage::url($order->full_payment_image) }}"
+                                       class="btn btn-sm btn-outline-primary"
+                                       download
                                        target="_blank">
                                         <i class="bi bi-download me-1"></i> Download
                                     </a>
-                                    <a href="{{ Storage::url($order->full_payment_image) }}" 
-                                       class="btn btn-sm btn-outline-secondary" 
+                                    <a href="{{ Storage::url($order->full_payment_image) }}"
+                                       class="btn btn-sm btn-outline-secondary"
                                        target="_blank">
                                         <i class="bi bi-eye me-1"></i> View Full Size
                                     </a>
@@ -409,7 +443,7 @@
             @endif
 
             <!-- ACTION WORKSPACES (Dynamic by Role) -->
-            
+
             <!-- 1. WRITER WORKSPACE -->
             @if(auth()->user()->isWriter() && $order->assigned_to === auth()->id())
             <div class="card border-0 shadow-sm mb-4 border-start border-4 border-primary">
@@ -421,7 +455,7 @@
                              @php
                                 $showStatusButtons = !in_array($order->status, ['half_file_uploaded', 'full_file_uploaded', 'completed', 'cancelled']);
                              @endphp
-                             
+
                              @if($showStatusButtons)
                                  @if($order->status === 'assigned_to_writer')
                                      <form method="POST" action="{{ route('orders.update-status', $order->id) }}" class="d-inline">
@@ -567,23 +601,50 @@
                             </form>
                         @endif
 
-                        @if($order->status == 'approved')
-                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#assignWriterModal">Assign Writer</button>
+                        @if($order->status == 'approved' || ($order->status == 'half_payment_uploaded' && $order->assigned_to))
+                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#assignWriterModal">
+                                {{ $order->assigned_to ? 'Reassign Writer' : 'Assign Writer' }}
+                            </button>
                         @endif
 
-                        @if($order->half_file && !$order->half_file_visible)
+                        @if($order->half_file)
+                            <a href="{{ route('orders.files.download', ['orderId' => $order->id, 'fileType' => 'half_file']) }}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-eye me-1"></i> Verify Half File
+                            </a>
                             <form action="{{ route('orders.toggle-half-file-visibility', $order->id) }}" method="POST">
                                 @csrf
-                                <button type="submit" class="btn btn-warning btn-sm text-dark">Show Half File to Client</button>
+                                <button type="submit" class="btn {{ $order->half_file_visible ? 'btn-secondary' : 'btn-warning' }} btn-sm text-dark">
+                                    {{ $order->half_file_visible ? 'Hide from Client' : 'Show Half File to Client' }}
+                                </button>
                             </form>
                         @endif
 
-                        @if($order->full_payment_image && $order->status !== 'full_payment_verified')
+                        @if($order->full_file)
+                            <a href="{{ route('orders.files.download', ['orderId' => $order->id, 'fileType' => 'full_file']) }}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-eye me-1"></i> Verify Full File
+                            </a>
+                            <form action="{{ route('orders.toggle-full-file-visibility', $order->id) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="btn {{ $order->full_file_visible ? 'btn-secondary' : 'btn-info text-white' }} btn-sm">
+                                    {{ $order->full_file_visible ? 'Hide from Client' : 'Show Full File to Client' }}
+                                </button>
+                            </form>
+                        @endif
+
+                        @if($order->full_payment_image && $order->status === 'full_payment_uploaded')
                             <form action="{{ route('orders.verify-full-payment', $order->id) }}" method="POST">
                                 @csrf
                                 <button type="submit" class="btn btn-success btn-sm">Verify Full Payment</button>
                             </form>
                         @endif
+
+                        @if($order->full_file_visible && $order->status !== 'completed')
+                            <form action="{{ route('orders.mark-completed', $order->id) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="btn btn-success btn-sm">Complete Order</button>
+                            </form>
+                        @endif
+
                     </div>
                 </div>
             </div>
@@ -688,14 +749,14 @@
         width: 8px;
     }
     .comments-list::-webkit-scrollbar-track {
-        background: #f1f1f1; 
+        background: #f1f1f1;
     }
     .comments-list::-webkit-scrollbar-thumb {
-        background: #ccc; 
+        background: #ccc;
         border-radius: 4px;
     }
     .comments-list::-webkit-scrollbar-thumb:hover {
-        background: #bbb; 
+        background: #bbb;
     }
 </style>
 @endsection

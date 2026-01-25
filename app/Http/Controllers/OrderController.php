@@ -81,6 +81,8 @@ class OrderController extends Controller
             'created_by' => Auth::id(),
         ]);
 
+        $this->notifyManagers($order, 'New order #' . $order->id . ' has been created and is pending approval.');
+
         return redirect()->route('orders.show', $order->id)->with('success', 'Order created successfully!');
     }
 
@@ -249,7 +251,7 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Full file uploaded successfully!');
     }
 
-    public function updateStatus(Request $request, $id) 
+    public function updateStatus(Request $request, $id)
     {
         $order = Order::findOrFail($id);
         $user = Auth::user();
@@ -259,15 +261,15 @@ class OrderController extends Controller
             $request->validate([
                 'status' => 'required|in:researching,writing,reviewing'
             ]);
-            
+
             // Basic logic: allow switching between these phases freely while working
             $allowed = ['assigned_to_writer', 'researching', 'writing', 'reviewing', 'half_file_uploaded', 'rejected']; // Rejected maybe later
-            
-            // Prevent going back to basic working if files are already uploaded/approved? 
+
+            // Prevent going back to basic working if files are already uploaded/approved?
             // For now, let's just update if valid
-            
+
             $order->update(['status' => $request->status]);
-            
+
              OrderStatus::create([
                 'order_id' => $order->id,
                 'status' => $request->status,
@@ -275,10 +277,10 @@ class OrderController extends Controller
             ]);
 
             $this->notifyUser($order->creator, $order, 'Order #' . $order->id . ' status updated to ' . ucfirst($request->status) . '.');
-            
+
             return redirect()->back()->with('success', 'Status updated to ' . ucfirst($request->status));
         }
-        
+
         // Manager logic could go here too but keeping strict for now
         abort(403);
     }
@@ -286,8 +288,11 @@ class OrderController extends Controller
     public function markCompleted($id)
     {
         $order = Order::findOrFail($id);
+        $user = Auth::user();
 
-        if ($order->assigned_to !== Auth::id()) {
+        // Manager/SuperAdmin can mark completed if full file is visible
+        // Writer can mark completed anytime? (Existing logic was writer only)
+        if (!$user->isManager() && !$user->isSuperAdmin() && $order->assigned_to !== $user->id) {
             abort(403);
         }
 
@@ -299,10 +304,35 @@ class OrderController extends Controller
             'created_by' => Auth::id(),
         ]);
 
-        $this->notifyManagers($order, 'Order #' . $order->id . ' has been completed.');
-        $this->notifyUser($order->creator, $order, 'Order #' . $order->id . ' has been marked as completed by the writer. It is pending final review.');
+        $this->notifyManagers($order, 'Order #' . $order->id . ' has been marked as completed.');
+        $this->notifyUser($order->creator, $order, 'Order #' . $order->id . ' has been marked as completed. Thank you for your business!');
 
         return redirect()->back()->with('success', 'Order marked as completed!');
+    }
+
+    public function cancel($id)
+    {
+        $order = Order::findOrFail($id);
+        $user = Auth::user();
+
+        if (!$user->isManager() && !$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $order->update(['status' => 'cancelled']);
+
+        OrderStatus::create([
+            'order_id' => $order->id,
+            'status' => 'cancelled',
+            'created_by' => Auth::id(),
+        ]);
+
+        $this->notifyUser($order->creator, $order, 'Order #' . $order->id . ' has been cancelled by the manager.');
+        if ($order->assignedWriter) {
+            $this->notifyUser($order->assignedWriter, $order, 'Order #' . $order->id . ' has been cancelled.');
+        }
+
+        return redirect()->back()->with('success', 'Order cancelled successfully!');
     }
 
     public function toggleHalfFileVisibility($id)
@@ -319,6 +349,9 @@ class OrderController extends Controller
         ]);
 
         if ($order->half_file_visible) {
+            if ($order->status === 'half_file_uploaded') {
+                $order->update(['status' => 'half_file_visible']);
+            }
             OrderStatus::create([
                 'order_id' => $order->id,
                 'status' => 'half_file_visible',
@@ -347,6 +380,9 @@ class OrderController extends Controller
         ]);
 
         if ($order->full_file_visible) {
+             if (in_array($order->status, ['full_file_uploaded', 'full_payment_verified'])) {
+                $order->update(['status' => 'full_file_visible']);
+            }
             OrderStatus::create([
                 'order_id' => $order->id,
                 'status' => 'full_file_visible',
@@ -403,7 +439,7 @@ class OrderController extends Controller
 
         $order->update([
             'status' => 'full_payment_verified',
-            'full_file_visible' => true,
+            // 'full_file_visible' => true, // Manager must authorize this now
         ]);
 
         OrderStatus::create([
@@ -442,6 +478,15 @@ class OrderController extends Controller
             'by' => Auth::id(),
             'to' => $user->id,
         ]);
+
+        // Send email to client
+        if ($user->isClient()) {
+            try {
+                Mail::to($user->email)->send(new \App\Mail\GenericMail('Order Status Update - #' . $order->id, $message));
+            } catch (\Exception $e) {
+                \Log::error('Failed to send email to client: ' . $e->getMessage());
+            }
+        }
     }
 
     private function processReferralReward($order)
