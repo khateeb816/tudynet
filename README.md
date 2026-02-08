@@ -148,4 +148,4 @@ After seeding, you can use these accounts:
 ## License
 
 This project is open-sourced software.
-# tudynet
+# Studynet

@@ -4,10 +4,10 @@
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>Tudynet - Order & Referral Management System</title>
+    <title>Studynet - Order & Referral Management System</title>
     <meta name="description"
-        content="Tudynet is a comprehensive platform for managing writing orders, connecting clients with expert writers, and facilitating a seamless referral system.">
-    <meta name="keywords" content="order management, referral system, academic writing, writers, clients, tudynet">
+        content="Studynet is a comprehensive platform for managing writing orders, connecting clients with expert writers, and facilitating a seamless referral system.">
+    <meta name="keywords" content="order management, referral system, academic writing, writers, clients, studynet">
 
     <!-- Favicons -->
     <link href="{{ asset('assets/images/logo.jpeg') }}" rel="icon">
@@ -39,8 +39,8 @@
         <div class="container position-relative d-flex align-items-center justify-content-between">
 
             <a href="{{ url('/') }}" class="logo d-flex align-items-center me-auto me-xl-0">
-                <img src="{{ asset('assets/images/logo.jpeg') }}" alt="Tudynet Logo">
-                <h1 class="sitename">Tudy<span style="color: var(--accent-color);">net</span></h1>
+                <img src="{{ asset('assets/images/logo.jpeg') }}" alt="Studynet Logo">
+                <h1 class="sitename">Study<span style="color: var(--accent-color);">net</span></h1>
             </a>
 
             <nav id="navmenu" class="navmenu">
@@ -735,11 +735,11 @@
                 <!-- Logo + About -->
                 <div class="col-lg-4 col-md-6 mb-4 mb-lg-0">
                     <a href="{{ url('/') }}" class="d-flex align-items-center mb-3">
-                        <span class="sitename fs-4 fw-bold">Tudynet</span>
+                        <span class="sitename fs-4 fw-bold">Studynet</span>
                     </a>
 
                     <p class="mb-3">
-                        Tudynet is a leading platform connecting students with expert writers. We streamline the
+                        Studynet is a leading platform connecting students with expert writers. We streamline the
                         academic
                         writing process while offering a rewarding referral system for our community.
                     </p>
@@ -770,7 +770,7 @@
             <div class="row align-items-center">
                 <div class="col-md-6">
                     <p class="mb-0">
-                        © <strong class="sitename">Tudynet</strong>. All Rights Reserved.
+                        © <strong class="sitename">Studynet</strong>. All Rights Reserved.
                     </p>
                 </div>
             </div>

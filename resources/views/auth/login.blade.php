@@ -1,6 +1,6 @@
 @extends('layouts.guest')
 
-@section('title', 'Login - Tudynet')
+@section('title', 'Login - Studynet')
 
 @section('content')
 <div class="container-fluid p-0">
@@ -12,8 +12,8 @@
                 <div class="mb-4">
                     <!-- Text Logo based on image since we might not have the image file -->
                     <div class="d-flex flex-column align-items-center mb-4">
-                         <img src="{{ asset('assets/images/logo.jpeg') }}" alt="Tudynet Logo" style="height: 80px; object-fit: contain;" class="mb-2">
-                        <h2 class="fw-bold text-dark m-0">Tudy<span style="color: #8B0000;">net</span></h2>
+                         <img src="{{ asset('assets/images/logo.jpeg') }}" alt="Studynet Logo" style="height: 80px; object-fit: contain;" class="mb-2">
+                        <h2 class="fw-bold text-dark m-0">Study<span style="color: #8B0000;">net</span></h2>
                         <span class="small fw-bold border border-dark px-1 rounded mt-1">Management System</span>
                     </div>
                 </div>
@@ -22,7 +22,7 @@
                 <h3 class="h4 text-muted mb-4">Streamlining Academic & Professional Writing Services</h3>
                 
                 <p class="mb-5 text-secondary" style="line-height: 1.6;">
-                    Tudynet provides a comprehensive platform for managing writing orders, connecting clients with expert writers, and facilitating a seamless referral system. Experience efficient workflow management, real-time updates, and secure payment processing.
+                    Studynet provides a comprehensive platform for managing writing orders, connecting clients with expert writers, and facilitating a seamless referral system. Experience efficient workflow management, real-time updates, and secure payment processing.
                 </p>
                 
                 <h5 class="fw-bold mb-3">Key Features</h5>
@@ -48,7 +48,7 @@
         <!-- Right Side -->
         <div class="col-lg-5 auth-right d-flex align-items-center justify-content-center p-5">
             <div class="w-100" style="max-width: 450px;">
-                <h3 class="fw-bold mb-2">Welcome to Tudynet</h3>
+                <h3 class="fw-bold mb-2">Welcome to Studynet</h3>
                 <p class="text-muted mb-5 small">Your Academic Writing Management Solution</p>
                 
                 <form method="POST" action="{{ route('login') }}">
@@ -81,7 +81,7 @@
                         @endif
                     </div>
                     
-                    <button type="submit" class="btn btn-tudynet mb-4">Login</button>
+                    <button type="submit" class="btn btn-studynet mb-4">Login</button>
                     
                     <div class="text-center">
                         <span class="text-muted small">Don't have an account?</span>

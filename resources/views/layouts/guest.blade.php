@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>@yield('title', 'Tudynet')</title>
+    <title>@yield('title', 'Studynet')</title>
     <link href="{{ asset('assets/images/logo.jpeg') }}" rel="icon">
 
     <!-- Fonts -->
@@ -50,7 +50,7 @@
         .feature-list li { margin-bottom: 12px; display: flex; align-items: start; font-size: 0.95rem; }
         .feature-list li i { color: #8B0000; margin-right: 10px; flex-shrink: 0; margin-top: 3px; }
         
-        .btn-tudynet {
+        .btn-studynet {
             background-color: #8B0000;
             color: white;
             border: none;
@@ -60,7 +60,7 @@
             width: 100%;
             transition: all 0.3s;
         }
-        .btn-tudynet:hover {
+        .btn-studynet:hover {
             background-color: #600000;
             color: white;
         }
